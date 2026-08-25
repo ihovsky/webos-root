@@ -1,0 +1,72 @@
+name: Build desktop wizard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "webos_root_wizard.py"
+      - "slopbro.py"
+      - "wwwroot/**"
+      - ".github/workflows/build-desktop.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            artifact: webOS-Root-Wizard-macOS-Apple-Silicon
+            archive: webOS-Root-Wizard-macOS-Apple-Silicon.zip
+          - os: macos-15-intel
+            artifact: webOS-Root-Wizard-macOS-Intel
+            archive: webOS-Root-Wizard-macOS-Intel.zip
+          - os: windows-latest
+            artifact: webOS-Root-Wizard-Windows
+            archive: dist/webOS-Root-Wizard-Windows.exe
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install builder
+        run: python -m pip install pyinstaller==6.22.2
+
+      - name: Validate wizard without a TV
+        run: python webos_root_wizard.py --self-test
+
+      - name: Build macOS app
+        if: runner.os == 'macOS'
+        run: pyinstaller --noconfirm --clean --windowed --name "webOS Root Wizard" --add-data "wwwroot:wwwroot" webos_root_wizard.py
+
+      - name: Package macOS app
+        if: runner.os == 'macOS'
+        run: ditto -c -k --sequesterRsrc --keepParent "dist/webOS Root Wizard.app" "${{ matrix.archive }}"
+
+      - name: Build Windows app
+        if: runner.os == 'Windows'
+        run: pyinstaller --noconfirm --clean --onefile --windowed --name "webOS-Root-Wizard-Windows" --add-data "wwwroot:wwwroot" webos_root_wizard.py
+
+      - name: Upload macOS app
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.archive }}
+          if-no-files-found: error
+
+      - name: Upload Windows app
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.archive }}
+          if-no-files-found: error

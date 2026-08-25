@@ -1,4 +1,8 @@
 *.key
+build/
+dist/
+*.spec
+__pycache__/
 *.log
 *.tar
 *.tar.gz
