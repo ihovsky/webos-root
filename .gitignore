@@ -1,0 +1,8 @@
+*.key
+*.log
+*.tar
+*.tar.gz
+*.tgz
+__pycache__/
+dist/
+.DS_Store

