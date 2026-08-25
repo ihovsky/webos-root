@@ -758,6 +758,13 @@ def make_tracking_handler(
     tracked = set(tracked_files)
 
     class TrackingHTTPRequestHandler(SimpleHTTPRequestHandler):
+        def address_string(self):
+            """Never block payload delivery on a reverse-DNS lookup."""
+            return self.client_address[0]
+
+        def log_message(self, fmt, *args):
+            log("request from %s: %s" % (self.client_address[0], fmt % args))
+
         def _requested_rel_path(self):
             raw_path = urlsplit(self.path).path
             try:

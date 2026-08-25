@@ -442,6 +442,12 @@ def self_test():
         bind_host="127.0.0.1",
         preferred_port=0,
     )
+    original_getfqdn = socket.getfqdn
+
+    def fail_on_reverse_dns(_address):
+        raise RuntimeError("payload server attempted reverse DNS")
+
+    socket.getfqdn = fail_on_reverse_dns
     try:
         for name in names:
             with urlopen(
@@ -452,6 +458,7 @@ def self_test():
         if not tracker.wait_for_all(1):
             raise RuntimeError("not all assets were tracked")
     finally:
+        socket.getfqdn = original_getfqdn
         server.shutdown()
         server.server_close()
     print("[ok] GUI engine self-test passed; no TV was contacted")
