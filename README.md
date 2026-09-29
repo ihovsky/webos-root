@@ -19,13 +19,16 @@
 
 ### Готовое приложение
 
-Откройте [Actions → Build desktop wizard](https://github.com/ihovsky/webos-root/actions/workflows/build-desktop.yml). Если там есть успешный запуск, скачайте артефакт для своей системы. Если успешных запусков нет, готовые приложения пока недоступны — используйте запуск из исходников ниже.
+Откройте [Releases](https://github.com/ihovsky/webos-root/releases) и скачайте файл из раздела **Assets** последнего выпуска:
 
-- `webOS-Root-Wizard-macOS-Apple-Silicon` — для Mac с процессором Apple M1/M2/M3/M4/M5;
-- `webOS-Root-Wizard-macOS-Intel` — для Intel Mac;
-- `webOS-Root-Wizard-Windows` — запустите `.exe`.
+- `webOS-Root-Wizard-macOS-Apple-Silicon.zip` — для Mac с процессором Apple Silicon;
+- `webOS-Root-Wizard-macOS-Intel.zip` — для Intel Mac.
 
-Сборки пока не подписаны сертификатом разработчика. На macOS при первом запуске нажмите приложение правой кнопкой → **Открыть**. Windows SmartScreen может попросить отдельно подтвердить запуск.
+Распакуйте архив и откройте `webOS Root Wizard.app`. На момент первого выпуска обновлённого мастера Windows `.exe` ещё не собран. На Windows скачайте **Source code (zip)** с той же страницы, установите Python 3 и запустите `start-windows.bat` из распакованной папки. Не путайте архив исходников с готовым приложением: для него нужен Python.
+
+[Actions → Build desktop wizard](https://github.com/ihovsky/webos-root/actions/workflows/build-desktop.yml) предназначен для будущих автоматических сборок. Если запуск неуспешен, его артефакты недоступны.
+
+Сборки пока не подписаны сертификатом разработчика. На macOS при первом запуске нажмите приложение правой кнопкой → **Открыть**. Когда появится Windows `.exe`, SmartScreen может попросить отдельно подтвердить его запуск.
 
 ### Запуск прямо из исходников
 
