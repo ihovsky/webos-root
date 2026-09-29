@@ -261,9 +261,10 @@ Copyright 2026. Licensed under AGPL v3 or later. No warranties.
                 logError('error downloading ' + file + ': ' + message);
             }
 
-            // Base URL for downloads is the directory of the current page
-            var href = location.href;
-            var baseUrl = href.substring(0, href.lastIndexOf('/') + 1);
+            // The trusted service path in the query string contains slashes.
+            // Taking the last slash from location.href would turn it into the
+            // download base and serve this HTML page instead of the payloads.
+            var baseUrl = location.protocol + '//' + location.host + '/';
 
             function requestDownload(file, onComplete) {
                 logDebug('requesting download of ' + file + ' from ' + baseUrl + file);

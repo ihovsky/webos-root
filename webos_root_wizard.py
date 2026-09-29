@@ -25,6 +25,7 @@ import slopbro
 
 
 APP_NAME = "webOS Root Wizard"
+APP_VERSION = "2026.09.29.1"
 VOICE_APP = "com.webos.app.voiceweb"
 DEVELOPER_MODE_APP = "com.palmdts.devmode"
 HOMEBREW_APP = "org.webosbrew.hbchannel"
@@ -516,7 +517,7 @@ def run_gui(default_tv_ip=""):
             ).pack(anchor="w")
             ttk.Label(
                 frame,
-                text="Экспериментальный мастер для webOS 26",
+                text="Экспериментальный мастер для webOS 26 · %s" % APP_VERSION,
             ).pack(anchor="w", pady=(3, 18))
 
             address = ttk.LabelFrame(frame, text="Телевизор", padding=12)
@@ -690,6 +691,7 @@ def run_gui(default_tv_ip=""):
             self.set_busy(True)
             self.status_var.set("Начинаю проверку")
             self.enqueue("log", "--- Новая попытка ---")
+            self.enqueue("log", "Версия мастера: %s" % APP_VERSION)
 
             def work():
                 previous_log = slopbro.log
