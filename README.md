@@ -19,7 +19,7 @@
 
 ### Готовое приложение
 
-Откройте [Actions → Build desktop wizard](https://github.com/ihovsky/webos-root/actions/workflows/build-desktop.yml), выберите последний успешный запуск и скачайте артефакт для своей системы:
+Откройте [Actions → Build desktop wizard](https://github.com/ihovsky/webos-root/actions/workflows/build-desktop.yml). Если там есть успешный запуск, скачайте артефакт для своей системы. Если успешных запусков нет, готовые приложения пока недоступны — используйте запуск из исходников ниже.
 
 - `webOS-Root-Wizard-macOS-Apple-Silicon` — для Mac с процессором Apple M1/M2/M3/M4/M5;
 - `webOS-Root-Wizard-macOS-Intel` — для Intel Mac;
