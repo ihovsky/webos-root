@@ -295,13 +295,13 @@ class RootEngine(object):
             client = None
             self.status("Передаю файлы — не выключайте ТВ")
             if tracker.wait_for_all(120):
-                self.log("Телевизор получил все файлы основного способа.")
-                return True
+                self.log("Телевизор запросил все файлы основного способа.")
+                return True, self.wait_for_launch_response(tracker, "Основной способ")
             self.log(
                 "Основной способ не завершился; автоматически включаю совместимый."
             )
             self.log("Не получены: %s" % ", ".join(tracker.missing_files()))
-            return False
+            return False, None
         finally:
             if client is not None:
                 client.close()
@@ -328,14 +328,26 @@ class RootEngine(object):
             client = None
             self.status("Совместимый способ передаёт файлы")
             if tracker.wait_for_all(wait_seconds):
-                self.log("Телевизор получил все файлы совместимого способа.")
-                return True
+                self.log("Телевизор запросил все файлы совместимого способа.")
+                return True, self.wait_for_launch_response(tracker, "Совместимый способ")
             self.log("Не получены: %s" % ", ".join(tracker.missing_files()))
-            return False
+            return False, None
         finally:
             if client is not None:
                 client.close()
             self.stop_server(server)
+
+    def wait_for_launch_response(self, tracker, name):
+        response = tracker.wait_for_launch_response(15)
+        if response is None:
+            self.log("%s: ответ сервиса не получен; запуск не подтверждён." % name)
+        elif response["returnValue"]:
+            self.log("%s: сервис принял запуск; ожидаю Homebrew." % name)
+        else:
+            self.log("%s: запуск отклонён: %s" % (
+                name, response.get("error") or response.get("errorText") or response
+            ))
+        return response
 
     def wait_for_homebrew(self, seconds=70):
         self.status("Жду установки Homebrew Channel")
@@ -366,10 +378,15 @@ class RootEngine(object):
         self.check_prerequisites()
 
         self.status("Запускаю основной способ")
-        transferred = self.primary_attempt()
-        if not transferred:
+        transferred, launch_response = self.primary_attempt()
+        homebrew_found = False
+        if transferred and not self.launch_rejected(launch_response):
+            homebrew_found = self.wait_for_homebrew()
+
+        if not homebrew_found:
             self.status("Переключаюсь на совместимый способ")
-            transferred = self.compatibility_attempt(40)
+            self.log("Основной способ не установил Homebrew; пробую совместимый.")
+            transferred, launch_response = self.compatibility_attempt(40)
             if not transferred:
                 proceed = self.ask_user(
                     "Нужно открыть Voice Assistant",
@@ -379,16 +396,25 @@ class RootEngine(object):
                 )
                 if not proceed:
                     raise WizardError("Остановлено пользователем до повторной попытки.")
-                transferred = self.compatibility_attempt(100)
+                transferred, launch_response = self.compatibility_attempt(100)
 
-        if not transferred:
-            raise WizardError(
-                "Телевизор не запросил все файлы. Не перезагружайте ТВ; сохраните "
-                "журнал и повторите после открытия Voice Assistant."
-            )
+            if not transferred:
+                raise WizardError(
+                    "Телевизор не запросил все файлы. Не перезагружайте ТВ; "
+                    "сохраните журнал для диагностики."
+                )
+            if self.launch_rejected(launch_response):
+                raise WizardError(
+                    "Телевизор отклонил запуск сервиса: %s. Не перезагружайте ТВ; "
+                    "сохраните журнал для диагностики." % (
+                        launch_response.get("error")
+                        or launch_response.get("errorText")
+                        or launch_response
+                    )
+                )
+            homebrew_found = self.wait_for_homebrew()
 
-        self.log("Установщик запущен. Жду появления Homebrew Channel…")
-        if not self.wait_for_homebrew():
+        if not homebrew_found:
             raise WizardError(
                 "Homebrew Channel не появился за отведённое время. Не перезагружайте "
                 "телевизор и сохраните журнал для диагностики."
@@ -408,6 +434,10 @@ class RootEngine(object):
         self.log(
             "Готово. После Root OK телевизор можно перезагрузить из Homebrew Channel."
         )
+
+    @staticmethod
+    def launch_rejected(response):
+        return response is not None and response["returnValue"] is False
 
 
 def self_test():
@@ -486,7 +516,7 @@ def run_gui(default_tv_ip=""):
             ).pack(anchor="w")
             ttk.Label(
                 frame,
-                text="Автоматический мастер для проверенного SlopBro-сценария webOS 26",
+                text="Экспериментальный мастер для webOS 26",
             ).pack(anchor="w", pady=(3, 18))
 
             address = ttk.LabelFrame(frame, text="Телевизор", padding=12)
@@ -650,8 +680,9 @@ def run_gui(default_tv_ip=""):
             accepted = messagebox.askokcancel(
                 "Экспериментальный root",
                 "Мастер предназначен для вашего собственного LG webOS 26. "
-                "Метод проверен на OLED77G6RLA, прошивке 43.11.78; на других "
-                "прошивках результат не гарантируется.\n\nНе выключайте и не "
+                "Первоначальный метод проверен на OLED77G6RLA, прошивке "
+                "43.11.78. Обновлённый способ пока не проверен нами на ТВ.\n\n"
+                "Не выключайте и не "
                 "перезагружайте ТВ до зелёного Root OK. Продолжить?",
             )
             if not accepted:

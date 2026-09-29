@@ -151,11 +151,22 @@ def main(argv=None):
             return 1
 
         print("[ok] The TV requested every compatibility file.")
+        response = tracker.wait_for_launch_response(15)
+        if response is None:
+            print("[unverified] No service launch response was received.")
+        elif response["returnValue"] is False:
+            print("[error] The TV rejected the service launch: %s" % (
+                response.get("error") or response.get("errorText") or response
+            ))
+            print("        Do not reboot the TV; save this output for diagnosis.")
+            return 1
+        else:
+            print("[ok] The TV accepted the service launch request.")
         print("[wait] Giving autoroot 25 seconds to install Homebrew Channel...")
         time.sleep(25)
-        print("[done] Open Homebrew Channel and verify that Root status is OK.")
+        print("[action] Open Homebrew Channel and verify that Root status is OK.")
         print("       If it is not OK, do not reboot the TV.")
-        return 0
+        return 0 if response is not None else 1
     except KeyboardInterrupt:
         print("\n[stopped] Interrupted by the user.")
         return 130

