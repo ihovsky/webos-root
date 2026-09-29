@@ -6,6 +6,7 @@
 (function () {
   var base = location.protocol + "//" + location.host + "/";
   var targetDir = "/media/internal/downloads";
+  var trustedServicePath = "/usr/palm/services/com.palm.service.devmode";
   var files = [
     ["package-webos26.json", "package.json"],
     ["services.json", "services.json"],
@@ -63,7 +64,11 @@
       status.textContent = "Run response: " + message;
       beacon("compat-run-result", message);
     };
-    var payload = { inputParams: "-- /tmp/cgroup dummy " + targetDir };
+    // Match the trusted-path argument position used by SlopBro v0.1.0 while
+    // retaining the compatible loader's existing jsserver invocation.
+    var payload = {
+      inputParams: "a b c " + trustedServicePath + " -- /tmp/cgroup dummy " + targetDir
+    };
     beacon("compat-run-request", JSON.stringify(payload));
     b.call("luna://com.webos.service.jsserver/run", JSON.stringify(payload));
   }

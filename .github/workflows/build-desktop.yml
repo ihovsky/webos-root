@@ -6,6 +6,8 @@ on:
     paths:
       - "webos_root_wizard.py"
       - "slopbro.py"
+      - "tools/webos26_compatible_launch.py"
+      - "tests/**"
       - "wwwroot/**"
       - ".github/workflows/build-desktop.yml"
   workflow_dispatch:
@@ -42,6 +44,12 @@ jobs:
 
       - name: Validate wizard without a TV
         run: python webos_root_wizard.py --self-test
+
+      - name: Validate launch flow without a TV
+        run: python -m unittest discover -s tests -v
+
+      - name: Validate TV payload arguments
+        run: node tests/payloads.test.js
 
       - name: Build macOS app
         if: runner.os == 'macOS'
